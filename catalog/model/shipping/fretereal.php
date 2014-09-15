@@ -151,6 +151,7 @@ class ModelShippingFreteReal extends Model {
             }
 
             $_SESSION['fretereal']['hash'] = "21312312asdasda";
+
             // Bate na api para calcular o valor do frete
             if (isset($_SESSION['fretereal']) && $_SESSION['fretereal']['hash'] == $hash) {
                 $ret = $_SESSION['fretereal']['calculo'];
@@ -189,6 +190,7 @@ class ModelShippingFreteReal extends Model {
                 $_SESSION['fretereal']['hash'] = $hash;
                 $_SESSION['fretereal']['cep'] = $zip;
                 $_SESSION['fretereal']['calculo'] = $ret;
+                $_SESSION['fretereal']['calculo']['token'] = $access_key;
             }
 
             $method_data = array(
@@ -201,18 +203,19 @@ class ModelShippingFreteReal extends Model {
 
             if ($ret['status'] == 1) {
             	foreach ($ret['fretes']['correios'] as $key => $value) {
-					$quote_data[$value['tipo_frete']] = array(
-						'code'         => 'fretereal.'.$value['tipo_frete'],
-						'title'        => $fretesNome[$value['tipo_frete']] . " (".($value['prazo'] + $extra_days)." dias úteis)",
-						'cost'         => $value['valor'],
-						'tax_class_id' => $this->config->get('fretereal_tax_class_id'),
-						'text'         => "R$ ".number_format($value['valor'],2,",",".")
-					);
+                    if ($value['status'] == 1) {
+    					$quote_data[$value['tipo_frete']] = array(
+    						'code'         => 'fretereal.'.$value['tipo_frete'],
+    						'title'        => $fretesNome[$value['tipo_frete']] . " (".($value['prazo'] + $extra_days)." dias úteis)" . (isset($value['alerta']) ? "<br/><small>".$value['alerta']."</small>" : ""),
+    						'cost'         => $value['valor'],
+    						'tax_class_id' => $this->config->get('fretereal_tax_class_id'),
+    						'text'         => "R$ ".number_format($value['valor'],2,",",".")
+    					);
+                    }
             	}
-
             	$method_data['quote'] = $quote_data;
             } else {
-            	$method_data['error'] = true;
+            	$method_data['error'] = $ret['msg'];
             }
 		}
 
