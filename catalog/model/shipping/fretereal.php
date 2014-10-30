@@ -25,9 +25,12 @@ class ModelShippingFreteReal extends Model {
             $client_secret = $this->config->get('fretereal_client_secret');
             $mao_propria = $this->config->get('fretereal_own_hands');
             $aviso_recebimento = $this->config->get('fretereal_receive_alert');
-            // $valor_declarado = "0";
             $extra_days = $this->config->get('fretereal_extra_days');
-            // $peso = $this->data['weight'] = $product_info['weight'];
+            $cobrar_caixas = $this->config->get('fretereal_cobrar_caixas');
+
+            $address_id = $this->customer->getAddressId();
+            $this->load->model("account/address");
+            $address = $this->model_account_address->getAddress($address_id);
 
             // Verifica se esta na sessao os dados dos fretes
 			if (!isset($_SESSION['fretereal']) || !isset($_SESSION['fretereal']['fretes'])) {
@@ -36,7 +39,7 @@ class ModelShippingFreteReal extends Model {
 	        		'client_secret' => $client_secret
 	    		);
 
-	        	$caminhoUrl = "https://fretereal.com/oauth/";
+	        	$caminhoUrl = "https://fretereal.com.br/oauth/";
 	            $caminhoApi = $caminhoUrl . "action/getFretes";
 	            $caminhoToken = $caminhoUrl . "action/request_token";
 
@@ -99,9 +102,12 @@ class ModelShippingFreteReal extends Model {
             	$extra_days = 0;
             }
 
-            // var_dump($_SESSION['fretereal']['dados']);
             if (!isset($this->request->post['postcode'])) {
-                $zip = $_SESSION['fretereal']['cep'];
+                if (!isset($_SESSION['fretereal']['cep'])) {
+                    $zip = $address['postcode'];
+                } else {
+                    $zip = $_SESSION['fretereal']['cep'];
+                }
             } else {
                 $zip = $this->request->post['postcode'];
             }
@@ -115,6 +121,7 @@ class ModelShippingFreteReal extends Model {
                 'forma_envio' => implode(",", $fretes),
                 'mao_propria' => ($mao_propria ? "S" : "N"),
                 'aviso_recebimento' => ($aviso_recebimento ? "S" : "N"),
+                'cobrar_caixa' => $cobrar_caixas,
                 'produtos' => array()
             );
 
@@ -141,7 +148,7 @@ class ModelShippingFreteReal extends Model {
 
             	$hash .= $prod['name'].$prod['quantity'];
             	$dadosParaAPI['produtos'][] = array(
-            		'nome' => $prod['name'],
+            		'identificacao' => $prod['name'],
                     'comprimento' => $prod['length'],
                     'largura' => $prod['width'],
                     'altura' => $prod['height'],
@@ -156,7 +163,7 @@ class ModelShippingFreteReal extends Model {
             if (isset($_SESSION['fretereal']) && $_SESSION['fretereal']['hash'] == $hash) {
                 $ret = $_SESSION['fretereal']['calculo'];
             } else {
-                $caminhoUrl = "http://fretereal.com/oauth/";
+                $caminhoUrl = "http://fretereal.com.br/oauth/";
                 $caminhoApi = $caminhoUrl . "action/api";
                 $caminhoToken = $caminhoUrl . "action/request_token";
 
@@ -175,8 +182,6 @@ class ModelShippingFreteReal extends Model {
                 $auth = json_decode($retToken);
                 $access_key = $auth->access_token;
 
-                // print_r($dadosParaAPI);
-
                 $curl2 = curl_init($caminhoApi . "?access_token=" . $access_key);
                 curl_setopt($curl2, CURLOPT_POST, true);
                 curl_setopt($curl2, CURLOPT_SSL_VERIFYPEER, false);
@@ -184,7 +189,6 @@ class ModelShippingFreteReal extends Model {
                 curl_setopt($curl2, CURLOPT_RETURNTRANSFER, 1);
 
                 $ret = curl_exec($curl2);
-                // echo $ret."\n\n";
                 $ret = json_decode($ret, true);
 
                 $_SESSION['fretereal']['hash'] = $hash;

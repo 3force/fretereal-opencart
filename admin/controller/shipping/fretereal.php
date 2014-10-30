@@ -52,15 +52,14 @@ class ControllerShippingFreteReal extends Controller {
 		$this->data['entry_client_id'] = $this->language->get('entry_client_id');
 		$this->data['entry_client_secret'] = $this->language->get('entry_client_secret');
 		$this->data['entry_origin'] = $this->language->get('entry_origin');
-		$this->data['entry_test'] = $this->language->get('entry_test');
 		$this->data['entry_service'] = $this->language->get('entry_service');
 		$this->data['entry_own_hands'] = $this->language->get('entry_own_hands');
 		$this->data['entry_receive_alert'] = $this->language->get('entry_receive_alert');
 		$this->data['entry_send_values'] = $this->language->get('entry_send_values');
+		$this->data['entry_cobrar_caixas'] = $this->language->get('entry_cobrar_caixas');
 		$this->data['entry_status'] = $this->language->get('entry_status');
 		$this->data['entry_sort_order'] = $this->language->get('entry_sort_order');
 		$this->data['entry_extra_days'] = $this->language->get('entry_extra_days');
-		$this->data['entry_debug'] = $this->language->get('entry_debug');
 
 		$this->data['button_save'] = $this->language->get('button_save');
 		$this->data['button_cancel'] = $this->language->get('button_cancel');
@@ -120,12 +119,6 @@ class ControllerShippingFreteReal extends Controller {
 			$this->data['fretereal_client_secret'] = $this->config->get('fretereal_client_secret');
 		}
 
-		if (isset($this->request->post['fretereal_test'])) {
-			$this->data['fretereal_test'] = $this->request->post['fretereal_test'];
-		} else {
-			$this->data['fretereal_test'] = $this->config->get('fretereal_test');
-		}
-
 		if (isset($this->request->post['fretereal_own_hands'])) {
 			$this->data['fretereal_own_hands'] = $this->request->post['fretereal_own_hands'];
 		} else {
@@ -144,6 +137,12 @@ class ControllerShippingFreteReal extends Controller {
 			$this->data['fretereal_send_values'] = $this->config->get('fretereal_send_values');
 		}
 
+		if (isset($this->request->post['fretereal_cobrar_caixas'])) {
+			$this->data['fretereal_cobrar_caixas'] = $this->request->post['fretereal_cobrar_caixas'];
+		} else {
+			$this->data['fretereal_cobrar_caixas'] = $this->config->get('fretereal_cobrar_caixas');
+		}
+
 		if (isset($this->request->post['fretereal_status'])) {
 			$this->data['fretereal_status'] = $this->request->post['fretereal_status'];
 		} else {
@@ -160,12 +159,6 @@ class ControllerShippingFreteReal extends Controller {
 			$this->data['fretereal_extra_days'] = $this->request->post['fretereal_extra_days'];
 		} else {
 			$this->data['fretereal_extra_days'] = $this->config->get('fretereal_extra_days');
-		}
-
-		if (isset($this->request->post['fretereal_debug'])) {
-			$this->data['fretereal_debug'] = $this->request->post['fretereal_debug'];
-		} else {
-			$this->data['fretereal_debug'] = $this->config->get('fretereal_debug');
 		}
 
         if ($this->data['entry_client_id'] == "" || $this->data['entry_client_secret'] == "") {
@@ -195,33 +188,46 @@ class ControllerShippingFreteReal extends Controller {
             $retToken = curl_exec($curl);
 
             $auth = json_decode($retToken);
-            $access_key = $auth->access_token;
-
-            $curl2 = curl_init($caminhoApi . "?access_token=" . $access_key);
-            curl_setopt($curl2, CURLOPT_POST, true);
-            curl_setopt($curl2, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($curl2, CURLOPT_POSTFIELDS, http_build_query($dadosParaAPI));
-            curl_setopt($curl2, CURLOPT_RETURNTRANSFER, 1);
-            $ret = curl_exec($curl2);
-            $ret = json_decode($ret, true);
-
-            if ($ret['status'] == 1) {
+            if (isset($auth->error) && $auth->error == "invalid_client") {
             	$return = array(
 	            	'label' => "Frete Real",
-	            	'value' => array()
+	            	'value' => array(
+	            		array('value' => 0, 'label' => $auth->error_description, 'check' => false)
+            		)
 	        	);
-
-	        	foreach ($ret['fretes'] as $key => $value) {
-	        		$checked = ($this->config->get("fretereal_" . $value['codfrete']) ? true : false);
-	        		$return['value'][] = array('value' => $value['codfrete'], 'label' => $value['descricao'], 'check' => $checked);
-	        	}
 
 	        	$this->data['fretesAceitos'] = $return;
 	        	$_SESSION['fretereal']['fretes'] = $return;
             } else {
-            	$this->data['fretesAceitos'] = false;
-            	$_SESSION['fretereal']['fretes'] = false;
-            }
+	            $access_key = $auth->access_token;
+
+	            $curl2 = curl_init($caminhoApi . "?access_token=" . $access_key);
+	            curl_setopt($curl2, CURLOPT_POST, true);
+	            curl_setopt($curl2, CURLOPT_SSL_VERIFYPEER, false);
+	            curl_setopt($curl2, CURLOPT_POSTFIELDS, http_build_query($dadosParaAPI));
+	            curl_setopt($curl2, CURLOPT_RETURNTRANSFER, 1);
+	            $ret = curl_exec($curl2);
+	            $ret = json_decode($ret, true);
+
+
+	            if ($ret['status'] == 1) {
+	            	$return = array(
+		            	'label' => "Frete Real",
+		            	'value' => array()
+		        	);
+
+		        	foreach ($ret['fretes'] as $key => $value) {
+		        		$checked = ($this->config->get("fretereal_" . $value['codfrete']) ? true : false);
+		        		$return['value'][] = array('value' => $value['codfrete'], 'label' => $value['descricao'], 'check' => $checked);
+		        	}
+
+		        	$this->data['fretesAceitos'] = $return;
+		        	$_SESSION['fretereal']['fretes'] = $return;
+	            } else {
+	            	$this->data['fretesAceitos'] = false;
+	            	$_SESSION['fretereal']['fretes'] = false;
+	            }
+	        }
 		}
 
 		$this->template = 'shipping/fretereal.tpl';

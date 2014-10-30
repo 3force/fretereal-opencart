@@ -33,20 +33,6 @@
               <?php } ?></td>
           </tr>
           <tr>
-            <td><?php echo $entry_test; ?></td>
-            <td><?php if ($fretereal_test) { ?>
-              <input type="radio" name="fretereal_test" value="1" checked="checked" />
-              <?php echo $text_yes; ?>
-              <input type="radio" name="fretereal_test" value="0" />
-              <?php echo $text_no; ?>
-              <?php } else { ?>
-              <input type="radio" name="fretereal_test" value="1" />
-              <?php echo $text_yes; ?>
-              <input type="radio" name="fretereal_test" value="0" checked="checked" />
-              <?php echo $text_no; ?>
-              <?php } ?></td>
-          </tr>
-          <tr>
             <td><?php echo $fretesAceitos['label']; ?></td>
             <td id="service">
               <div id="US">
@@ -106,6 +92,20 @@
               <?php } ?></td>
           </tr>
           <tr>
+            <td><?php echo $entry_cobrar_caixas; ?></td>
+            <td><?php if ($fretereal_cobrar_caixas) { ?>
+              <input type="radio" name="fretereal_cobrar_caixas" value="1" checked="checked" />
+              <?php echo $text_yes; ?>
+              <input type="radio" name="fretereal_cobrar_caixas" value="0" />
+              <?php echo $text_no; ?>
+              <?php } else { ?>
+              <input type="radio" name="fretereal_cobrar_caixas" value="1" />
+              <?php echo $text_yes; ?>
+              <input type="radio" name="fretereal_cobrar_caixas" value="0" checked="checked" />
+              <?php echo $text_no; ?>
+              <?php } ?></td>
+          </tr>
+          <tr>
             <td><?php echo $entry_extra_days; ?></td>
             <td><input type="text" name="fretereal_extra_days" value="<?php echo $fretereal_extra_days; ?>" size="1" /></td>
           </tr>
@@ -124,18 +124,6 @@
           <tr>
             <td><?php echo $entry_sort_order; ?></td>
             <td><input type="text" name="fretereal_sort_order" value="<?php echo $fretereal_sort_order; ?>" size="1" /></td>
-          </tr>
-		  <tr>
-            <td><?php echo $entry_debug; ?></td>
-            <td><select name="fretereal_debug">
-              <?php if ($fretereal_debug) { ?>
-              <option value="1" selected="selected"><?php echo $text_enabled; ?></option>
-              <option value="0"><?php echo $text_disabled; ?></option>
-              <?php } else { ?>
-              <option value="1"><?php echo $text_enabled; ?></option>
-              <option value="0" selected="selected"><?php echo $text_disabled; ?></option>
-              <?php } ?>
-            </select></td>
           </tr>
         </table>
       </form>
